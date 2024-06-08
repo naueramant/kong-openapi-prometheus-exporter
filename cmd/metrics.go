@@ -107,11 +107,9 @@ func loadSpecifcation(ctx context.Context, url string, reloaded bool) error {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"duration":            time.Since(specStartTime),
-		"title":               spec.Meta.Title,
-		"version":             spec.Meta.Version,
-		"base_path":           spec.Meta.BasePath,
-		"number_of_endpoints": spec.Meta.NumberOfEndpoints,
+		"duration": time.Since(specStartTime),
+		"title":    spec.Meta.Title,
+		"version":  spec.Meta.Version,
 	}).Infof("OpenAPI specification %s", func() string {
 		if reloaded {
 			return "reloaded"

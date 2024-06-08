@@ -30,10 +30,9 @@ type Specification struct {
 }
 
 type Meta struct {
-	Title             string
-	Version           string
-	BasePath          string
-	NumberOfEndpoints int
+	Title    string
+	Version  string
+	BasePath string
 }
 
 func NewSpecification(ctx context.Context, docModel *libopenapi.DocumentModel[v3.Document]) (*Specification, error) {
@@ -62,7 +61,6 @@ func NewSpecification(ctx context.Context, docModel *libopenapi.DocumentModel[v3
 			Title:    docModel.Model.Info.Title,
 			Version:  docModel.Model.Info.Version,
 			BasePath: basePath,
-			// TODO: Implement counting the number of endpoints
 		},
 	}
 

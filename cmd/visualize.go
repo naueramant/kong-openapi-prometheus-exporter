@@ -38,11 +38,9 @@ func RunVisualize(cmd *cobra.Command, args []string) {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"duration":            time.Since(specStartTime),
-		"title":               spec.Meta.Title,
-		"version":             spec.Meta.Version,
-		"base_path":           spec.Meta.BasePath,
-		"number_of_endpoints": spec.Meta.NumberOfEndpoints,
+		"duration": time.Since(specStartTime),
+		"title":    spec.Meta.Title,
+		"version":  spec.Meta.Version,
 	}).Info("Specification loaded")
 
 	outDir, err := cmd.Flags().GetString("out")

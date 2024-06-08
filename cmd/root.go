@@ -55,8 +55,6 @@ func init() {
 func initConfig() {
 	viper.SetConfigFile(cfgFile)
 
-	// TODO: Add support for environment variables
-
 	if err := viper.ReadInConfig(); err == nil {
 		logrus.WithField("file", viper.ConfigFileUsed()).Info("Using config file")
 	}
