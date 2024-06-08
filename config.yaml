@@ -1,0 +1,11 @@
+log:
+  level: debug
+  format: text
+
+openapi:
+  url: https://docs.wiseflow.net/uniwise.yaml
+  reload: 1h
+
+prometheus:
+  path: /metrics
+  port: 8080
