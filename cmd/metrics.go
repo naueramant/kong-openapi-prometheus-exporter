@@ -53,8 +53,9 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 	metricLabels := append(defaultLabels, extraLabels...)
 
 	requestMetric := prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "http_requests_api_total",
-		Help: "Total number of requests to the API",
+		Subsystem: "kong_openapi_exporter",
+		Name:      "http_requests_total",
+		Help:      "Total number of requests to the API",
 	}, metricLabels)
 
 	promInstance.MustRegister(requestMetric)
