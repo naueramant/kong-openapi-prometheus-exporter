@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"api-usage/pkg/kong"
@@ -43,10 +44,18 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 
 	promInstance := prometheus.NewRegistry()
 
+	defaultLabels := []string{"method", "status", "duration", "path"}
+	extraLabels := []string{}
+	for _, header := range *config.Metrics.Headers {
+		extraLabels = append(extraLabels, headerNameToLabelName(header))
+	}
+
+	metricLabels := append(defaultLabels, extraLabels...)
+
 	requestMetric := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "http_requests_api_total",
 		Help: "Total number of requests to the API",
-	}, []string{"method", "status", "duration", "path", "ip", "user_agent", "size", "license_id"})
+	}, metricLabels)
 
 	promInstance.MustRegister(requestMetric)
 
@@ -91,7 +100,8 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 func loadSpecifcation(ctx context.Context, url string, reloaded bool) error {
 	specStartTime := time.Now()
 
-	spec, err := swagger.LoadURL(ctx, url)
+	var err error
+	spec, err = swagger.LoadURL(ctx, url)
 	if err != nil {
 		return err
 	}
@@ -128,14 +138,19 @@ func startReloadSpecificationJob(ctx context.Context) {
 
 func logToLabels(log *kong.Log, path string) prometheus.Labels {
 	labels := prometheus.Labels{
-		"method":     log.Request.Method,
-		"status":     strconv.Itoa(log.Response.Status),
-		"duration":   strconv.Itoa(log.Latencies.Request),
-		"path":       path,
-		"user_agent": log.Request.Headers.UserAgent,
-		"size":       strconv.Itoa(log.Request.Size),
-		"license_id": log.Request.Headers.LicenseID,
+		"method":   log.Request.Method,
+		"status":   strconv.Itoa(log.Response.Status),
+		"duration": strconv.Itoa(log.Latencies.Request),
+		"path":     path,
+	}
+
+	for _, header := range *config.Metrics.Headers {
+		labels[headerNameToLabelName(header)] = log.Request.Headers[header]
 	}
 
 	return labels
+}
+
+func headerNameToLabelName(header string) string {
+	return strings.Replace(header, "-", "_", -1)
 }

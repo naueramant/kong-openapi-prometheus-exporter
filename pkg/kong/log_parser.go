@@ -41,17 +41,12 @@ type Latencies struct {
 }
 
 type Request struct {
-	Querystring Querystring    `json:"querystring"`
-	Size        int            `json:"size"`
-	URI         string         `json:"uri"`
-	URL         string         `json:"url"`
-	Headers     RequestHeaders `json:"headers"`
-	Method      string         `json:"method"`
-}
-
-type RequestHeaders struct {
-	UserAgent string `json:"user-agent"`
-	LicenseID string `json:"x-wiseflow-license-id"`
+	Querystring Querystring       `json:"querystring"`
+	Size        int               `json:"size"`
+	URI         string            `json:"uri"`
+	URL         string            `json:"url"`
+	Headers     map[string]string `json:"headers"`
+	Method      string            `json:"method"`
 }
 
 type Querystring struct{}

@@ -30,6 +30,9 @@ type Config struct {
 		Path string `mapstructure:"path" default:"/metrics"`
 		Port string `mapstructure:"port" default:"8080"`
 	}
+	Metrics struct {
+		Headers *[]string `mapstructure:"headers" validate:"omitempty"`
+	}
 }
 
 var rootCmd = &cobra.Command{

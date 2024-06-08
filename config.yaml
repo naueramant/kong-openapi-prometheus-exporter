@@ -2,10 +2,14 @@ log:
   level: debug
   format: text
 
+prometheus:
+  path: /metrics
+  port: 8080
+
 openapi:
   url: https://docs.wiseflow.net/uniwise.yaml
   reload: 1h
 
-prometheus:
-  path: /metrics
-  port: 8080
+metrics:
+  headers:
+    - user-agent
