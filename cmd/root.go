@@ -18,6 +18,10 @@ var (
 )
 
 type Config struct {
+	Log struct {
+		Level  string `mapstructure:"level" default:"info" validate:"oneof=panic fatal error warn info debug trace"`
+		Format string `mapstructure:"format" default:"text" validate:"oneof=text json"`
+	} `mapstructure:"log"`
 	OpenAPI struct {
 		URL    string         `mapstructure:"url" validate:"required,url"`
 		Reload *time.Duration `mapstructure:"reload" validate:"omitempty"`
@@ -66,4 +70,30 @@ func initConfig() {
 	if err := validator.New().Struct(config); err != nil {
 		logrus.WithError(err).Fatal("Failed to validate config")
 	}
+
+	setupLogger()
+}
+
+func setupLogger() {
+	level, err := logrus.ParseLevel(config.Log.Level)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to parse log level")
+	}
+	logrus.SetLevel(level)
+
+	var format string
+	if config.Log.Format == "json" {
+		format = "json"
+		logrus.SetFormatter(&logrus.JSONFormatter{})
+	} else if config.Log.Format == "text" {
+		format = "text"
+		logrus.SetFormatter(&logrus.TextFormatter{})
+	} else {
+		logrus.WithField("format", config.Log.Format).Fatal("Unsupported log format")
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"log_level":  level,
+		"log_format": format,
+	}).Info("Logger configured")
 }
