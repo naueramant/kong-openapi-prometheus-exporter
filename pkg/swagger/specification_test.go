@@ -13,6 +13,8 @@ func TestSpecification_MatchPath(t *testing.T) {
 	spec, err := LoadFile(ctx, "../../testdata/spec.yaml")
 	assert.NoError(t, err)
 
+	Visualize(spec, "spec")
+
 	tests := []struct {
 		method string
 		path   string
@@ -42,8 +44,8 @@ func TestSpecification_MatchPath(t *testing.T) {
 		{"GET", "/api/v1/users/1/posts/foobar/comments/2/sorted/false", true},
 
 		// Ubiquitous paths
-		{"GET", "/api/v1/users/some-pid/info", true},
-		{"GET", "/api/v1/users/john.doe@email.com/history", true},
+		{"GET", "/api/v1/workers/some-pid/info", true},
+		{"GET", "/api/v1/workers/john.doe@email.com/history", true},
 	}
 
 	for _, test := range tests {

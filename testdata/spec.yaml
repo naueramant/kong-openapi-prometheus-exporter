@@ -135,7 +135,7 @@ paths:
         '200': 
           description: A comment
   # Path with ubiquitous parameters
-  /users/{pid}/info:
+  /workers/{pid}/info:
     get:
       summary: Get user info
       parameters:
@@ -147,7 +147,7 @@ paths:
       responses:
         '200': 
           description: A list of comments
-  /users/{email}/history:
+  /workers/{email}/history:
     get:
       summary: Get all comments by email
       parameters:
