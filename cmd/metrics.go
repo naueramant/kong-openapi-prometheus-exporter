@@ -45,6 +45,10 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 	}
 
 	if config.OpenAPI.Reload != nil {
+		logrus.WithFields(logrus.Fields{
+			"interval": *config.OpenAPI.Reload,
+		}).Info("OpenAPI specification auto reload enabled")
+
 		go startReloadSpecificationJob(ctx)
 	}
 
