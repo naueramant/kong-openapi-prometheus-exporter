@@ -1,4 +1,4 @@
-# Kong OpenAPI prometheus exporter
+# Kong OpenAPI 3.0 prometheus exporter
 
 This prometheus takes a swagger file and uses the kong request log to generate prometheus metrics, grouping by the swagger paths and methods.
 
@@ -28,9 +28,9 @@ Next we need to add a global kong HTTP log plugin to the kong gateway. This plug
 | `log.format`                   | `json`            | The format of the log output. Common formats are `text` and `json`.              |
 | `prometheus.path`              | `/metrics`        | The URL path where metrics are exposed.                                          |
 | `prometheus.port`              | `9090`            | The port on which the Prometheus metrics endpoint listens.                       |
-| `openapi.url`                  |                   | The URL of the OpenAPI specification.                                            |
-| `openapi.file`                 |                   | The path to the OpenAPI specification file.                                      |
-| `openapi.reload`               | `24h`             | The interval at which the OpenAPI documentation is reloaded.                     |
+| `openapi.url`                  |                   | The URL of the OpenAPI 3.0 specification.                                        |
+| `openapi.file`                 |                   | The path to the OpenAPI 3.0 specification file.                                  |
+| `openapi.reload`               | `24h`             | The interval at which the OpenAPI 3.0 documentation is reloaded.                 |
 | `metrics.include_operation_id` | `false`           | Include the operation ID of endpoints in the metrics.                            |
 | `metrics.headers`              | `[]`              | List of HTTP headers to be included in the metrics.                              |
 

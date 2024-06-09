@@ -40,7 +40,9 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 		"url": config.OpenAPI.URL,
 	}).Info("Loading OpenAPI specification")
 
-	loadSpecification(ctx)
+	if err := loadSpecification(ctx); err != nil {
+		logrus.WithError(err).Fatal("Failed to load OpenAPI specification")
+	}
 
 	if config.OpenAPI.Reload != nil {
 		go startReloadSpecificationJob(ctx)
@@ -117,7 +119,6 @@ func loadSpecification(ctx context.Context) error {
 	} else if config.OpenAPI.File != "" {
 		spec, err = swagger.LoadFile(ctx, config.OpenAPI.File)
 	}
-
 	if err != nil {
 		return err
 	}

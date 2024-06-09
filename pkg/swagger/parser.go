@@ -10,6 +10,8 @@ import (
 	"github.com/pb33f/libopenapi"
 )
 
+const minSupportedVersion float32 = 3.0
+
 func LoadFile(ctx context.Context, path string) (*Specification, error) {
 	specBytes, err := os.ReadFile(path)
 	if err != nil {
@@ -41,6 +43,12 @@ func newSpecification(ctx context.Context, specBytes []byte) (*Specification, er
 	document, err := libopenapi.NewDocument(specBytes)
 	if err != nil {
 		return nil, err
+	}
+
+	version := document.GetSpecInfo().VersionNumeric
+
+	if version < minSupportedVersion {
+		return nil, fmt.Errorf("document is not an OpenAPI 3.0 document")
 	}
 
 	docModel, errors := document.BuildV3Model()

@@ -105,14 +105,14 @@ func (s *Specification) MatchPath(method string, p string) (*Node, bool) {
 	return s.dfs(tree, pathStrParts)
 }
 
-type StackNode struct {
+type stackNode struct {
 	Node      *Node
 	PartIndex int
 }
 
 func (s *Specification) dfs(currentNode *Node, pathStrParts []string) (*Node, bool) {
 	// Create a stack for the depth-first search with the root node
-	stack := []StackNode{{Node: currentNode, PartIndex: 0}}
+	stack := []stackNode{{Node: currentNode, PartIndex: 0}}
 	pathLen := len(pathStrParts)
 
 	for len(stack) > 0 {
@@ -144,7 +144,7 @@ func (s *Specification) dfs(currentNode *Node, pathStrParts []string) (*Node, bo
 		if child, ok := currentNode.Children[part]; ok {
 			// Exact match not allowed for parameters
 			if !child.IsParameter {
-				stack = append(stack, StackNode{Node: child, PartIndex: partIndex + 1})
+				stack = append(stack, stackNode{Node: child, PartIndex: partIndex + 1})
 
 				continue
 			}
@@ -160,7 +160,7 @@ func (s *Specification) dfs(currentNode *Node, pathStrParts []string) (*Node, bo
 
 		// Push the potential matches to the stack
 		for _, match := range potentialMatches {
-			stack = append(stack, StackNode{Node: match, PartIndex: partIndex + 1})
+			stack = append(stack, stackNode{Node: match, PartIndex: partIndex + 1})
 		}
 	}
 
