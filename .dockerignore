@@ -1,0 +1,7 @@
+*
+!pkg
+!go.mod
+!go.sum
+!cmd
+!main.go
+!config.example.yaml
