@@ -1,6 +1,10 @@
 # Kong OpenAPI 3.0 prometheus exporter
 
-This prometheus takes a swagger file and uses the kong request log to generate prometheus metrics, grouping by the swagger paths and methods.
+This exporter takes an OpenAPI 3.0 specification and a kong http request log to generate prometheus metrics, grouping metrics by specific path, method, status code, duration and optionally operation ID and selected headers.
+
+<p align="center">
+    <img src="assets/diagram.png" alt="Kong OpenAPI 3.0 prometheus exporter" width="800"/>
+</p>
 
 ## Setup guide
 
