@@ -42,7 +42,7 @@ func Visualize(spec *Specification, outDir string) error {
 	return nil
 }
 
-func visualizeNode(graph *cgraph.Graph, treeNode *TreeNode, graphNode *cgraph.Node) error {
+func visualizeNode(graph *cgraph.Graph, treeNode *Node, graphNode *cgraph.Node) error {
 	for part, child := range treeNode.Children {
 		id := uuid.New().String()
 

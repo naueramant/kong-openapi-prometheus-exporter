@@ -3,7 +3,6 @@ package swagger
 import (
 	"context"
 	"net/url"
-	"path"
 	"regexp"
 	"strings"
 
@@ -12,8 +11,8 @@ import (
 	"github.com/pb33f/libopenapi/orderedmap"
 )
 
-type TreeNode struct {
-	Children map[string]*TreeNode
+type Node struct {
+	Children map[string]*Node
 
 	IsParameter bool
 	CanBeLeaf   bool
@@ -23,9 +22,17 @@ type TreeNode struct {
 	Path string
 }
 
+func (n *Node) MatchParam(part string) bool {
+	if !n.IsParameter {
+		return false
+	}
+
+	return n.Regex.MatchString(part)
+}
+
 type Specification struct {
 	Document *libopenapi.DocumentModel[v3.Document]
-	Tree     map[string]*TreeNode
+	Tree     map[string]*Node
 	Meta     Meta
 }
 
@@ -48,9 +55,9 @@ func NewSpecification(ctx context.Context, docModel *libopenapi.DocumentModel[v3
 	}
 
 	// Create a tree for each operation
-	tree := map[string]*TreeNode{}
+	tree := map[string]*Node{}
 	for _, method := range operations {
-		tree[method] = &TreeNode{}
+		tree[method] = &Node{}
 	}
 
 	// Create the specification
@@ -88,58 +95,82 @@ func (s *Specification) MatchPath(method string, p string) (*string, bool) {
 	pathStrParts := splitPath(p)
 
 	// Start at the root of the tree
-	currentNode := s.Tree[method]
-	if currentNode == nil {
+	tree := s.Tree[method]
+	if tree == nil {
 		return nil, false
 	}
 
-	// Traverse the tree
-	for i, part := range pathStrParts {
-		isLast := i == len(pathStrParts)-1
-
-		// TODO: Solve edge case where the path matches multiple children
-
-		child, ok := currentNode.Children[part]
-		if !ok {
-			// If no child is found, check if there is a parameter that matches
-			for _, c := range currentNode.Children {
-				if !c.IsParameter {
-					continue
-				}
-
-				if c.Regex.MatchString(part) {
-					child = c
-
-					break
-				}
-			}
-
-			// If no child is found with a matching parameter, return false
-			if child == nil {
-				return nil, false
-			}
-		}
-
-		// If an exact match of the param placeholder, return false
-		// since this doesn't count as a match
-		if ok && child.IsParameter {
-			return nil, false
-		}
-
-		// If this is the last part of the path and the child cannot be a leaf, return false
-		if isLast && !child.CanBeLeaf {
-			return nil, false
-		}
-
-		currentNode = child
-	}
-
-	pathWithBase := path.Join(s.Meta.BasePath, currentNode.Path)
-
-	return &pathWithBase, true
+	// Perform a depth-first search on the tree
+	return s.dfs(tree, pathStrParts)
 }
 
-func (s *Specification) buildPathTreeForMethod(ctx context.Context, docModel *libopenapi.DocumentModel[v3.Document], method string) error {
+type StackNode struct {
+	Node      *Node
+	PartIndex int
+}
+
+func (s *Specification) dfs(currentNode *Node, pathStrParts []string) (*string, bool) {
+	// Create a stack for the depth-first search with the root node
+	stack := []StackNode{{Node: currentNode, PartIndex: 0}}
+	pathLen := len(pathStrParts)
+
+	for len(stack) > 0 {
+		// Pop the top of the stack
+		top := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		// Get the current node and part index from the stack
+		currentNode, partIndex := top.Node, top.PartIndex
+
+		// If the current node is nil, continue to the next iteration
+		if currentNode == nil {
+			continue
+		}
+
+		// If this is the last part of the path and the current node can be a leaf, return the path
+		isLastPart := partIndex == pathLen
+		if isLastPart {
+			if currentNode.CanBeLeaf {
+				return &currentNode.Path, true
+			}
+
+			continue
+		}
+
+		part := pathStrParts[partIndex]
+
+		// Check for an exact match
+		if child, ok := currentNode.Children[part]; ok {
+			// Exact match not allowed for parameters
+			if !child.IsParameter {
+				stack = append(stack, StackNode{Node: child, PartIndex: partIndex + 1})
+
+				continue
+			}
+		}
+
+		// If no exact match was found, check for parameter matches
+		potentialMatches := []*Node{}
+		for _, child := range currentNode.Children {
+			if child.IsParameter && child.MatchParam(part) {
+				potentialMatches = append(potentialMatches, child)
+			}
+		}
+
+		// Push the potential matches to the stack
+		for _, match := range potentialMatches {
+			stack = append(stack, StackNode{Node: match, PartIndex: partIndex + 1})
+		}
+	}
+
+	return nil, false
+}
+
+func (s *Specification) buildPathTreeForMethod(
+	ctx context.Context,
+	docModel *libopenapi.DocumentModel[v3.Document],
+	method string,
+) error {
 	for pathItem := range orderedmap.Iterate(ctx, docModel.Model.Paths.PathItems) {
 		// Skip the path item if the operation is not present
 		if !isOperationInPathItem(pathItem.Value(), method) {
@@ -156,12 +187,12 @@ func (s *Specification) buildPathTreeForMethod(ctx context.Context, docModel *li
 		for i, part := range pathStrParts {
 			// Create the children map if it doesn't exist
 			if currentNode.Children == nil {
-				currentNode.Children = map[string]*TreeNode{}
+				currentNode.Children = map[string]*Node{}
 			}
 
 			// Create the child node if it doesn't exist yet
 			if _, ok := currentNode.Children[part]; !ok {
-				currentNode.Children[part] = &TreeNode{}
+				currentNode.Children[part] = &Node{}
 			}
 
 			// If this is the last part of the path, mark it as a leaf
