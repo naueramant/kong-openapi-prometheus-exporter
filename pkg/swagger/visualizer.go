@@ -24,12 +24,12 @@ func Visualize(spec *Specification, outDir string) error {
 			return err
 		}
 
-		node, err := graph.CreateNode(method)
+		rootNode, err := graph.CreateNode(method)
 		if err != nil {
 			return err
 		}
 
-		visualizeNode(graph, spec.Tree[method], node)
+		buildGraph(graph, spec.Tree[method], rootNode)
 
 		if err := g.RenderFilename(graph, graphviz.PNG, path.Join(
 			outDir,
@@ -42,7 +42,7 @@ func Visualize(spec *Specification, outDir string) error {
 	return nil
 }
 
-func visualizeNode(graph *cgraph.Graph, treeNode *Node, graphNode *cgraph.Node) error {
+func buildGraph(graph *cgraph.Graph, treeNode *Node, graphNode *cgraph.Node) error {
 	for part, child := range treeNode.Children {
 		id := uuid.New().String()
 
@@ -66,7 +66,7 @@ func visualizeNode(graph *cgraph.Graph, treeNode *Node, graphNode *cgraph.Node) 
 			return err
 		}
 
-		visualizeNode(graph, child, childNode)
+		buildGraph(graph, child, childNode)
 	}
 
 	return nil

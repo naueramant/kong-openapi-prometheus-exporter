@@ -29,14 +29,18 @@ func init() {
 
 var spec *swagger.Specification
 
+var config *Config
+
 func RunMetrics(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
+
+	config = loadConfig()
 
 	logrus.WithFields(logrus.Fields{
 		"url": config.OpenAPI.URL,
 	}).Info("Loading OpenAPI specification")
 
-	loadSpecifcation(ctx, config.OpenAPI.URL, false)
+	loadSpecification(ctx)
 
 	if config.OpenAPI.Reload != nil {
 		go startReloadSpecificationJob(ctx)
@@ -44,13 +48,17 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 
 	promInstance := prometheus.NewRegistry()
 
-	defaultLabels := []string{"method", "status", "duration", "path"}
-	extraLabels := []string{}
-	for _, header := range *config.Metrics.Headers {
-		extraLabels = append(extraLabels, headerNameToLabelName(header))
+	metricLabels := []string{"method", "status", "duration", "path"}
+
+	if config.Metrics.IncludeOperationID {
+		metricLabels = append(metricLabels, "operation_id")
 	}
 
-	metricLabels := append(defaultLabels, extraLabels...)
+	headerLabels := []string{}
+	for _, header := range *config.Metrics.Headers {
+		headerLabels = append(headerLabels, headerNameToLabelName(header))
+	}
+	metricLabels = append(metricLabels, headerLabels...)
 
 	requestMetric := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: "kong_openapi_exporter",
@@ -80,9 +88,9 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 			return
 		}
 
-		specPath, ok := spec.MatchPath(log.Request.Method, log.Request.URI)
+		pathNode, ok := spec.MatchPath(log.Request.Method, log.Request.URI)
 		if ok {
-			requestMetric.With(logToLabels(log, *specPath)).Inc()
+			requestMetric.With(logToLabels(log, pathNode)).Inc()
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -98,11 +106,18 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 	}
 }
 
-func loadSpecifcation(ctx context.Context, url string, reloaded bool) error {
+func loadSpecification(ctx context.Context) error {
 	specStartTime := time.Now()
+	isReloading := spec != nil
 
 	var err error
-	spec, err = swagger.LoadURL(ctx, url)
+
+	if config.OpenAPI.URL != "" {
+		spec, err = swagger.LoadURL(ctx, config.OpenAPI.URL)
+	} else if config.OpenAPI.File != "" {
+		spec, err = swagger.LoadFile(ctx, config.OpenAPI.File)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -112,7 +127,7 @@ func loadSpecifcation(ctx context.Context, url string, reloaded bool) error {
 		"title":    spec.Meta.Title,
 		"version":  spec.Meta.Version,
 	}).Infof("OpenAPI specification %s", func() string {
-		if reloaded {
+		if isReloading {
 			return "reloaded"
 		}
 
@@ -127,7 +142,7 @@ func startReloadSpecificationJob(ctx context.Context) {
 		for {
 			select {
 			case <-time.After(*config.OpenAPI.Reload):
-				loadSpecifcation(ctx, config.OpenAPI.URL, true)
+				loadSpecification(ctx)
 			case <-ctx.Done():
 				return
 			}
@@ -135,12 +150,16 @@ func startReloadSpecificationJob(ctx context.Context) {
 	}()
 }
 
-func logToLabels(log *kong.Log, path string) prometheus.Labels {
+func logToLabels(log *kong.Log, pathNode *swagger.Node) prometheus.Labels {
 	labels := prometheus.Labels{
 		"method":   log.Request.Method,
 		"status":   strconv.Itoa(log.Response.Status),
 		"duration": strconv.Itoa(log.Latencies.Request),
-		"path":     path,
+		"path":     pathNode.Path,
+	}
+
+	if config.Metrics.IncludeOperationID {
+		labels["operation_id"] = pathNode.OperationID
 	}
 
 	for _, header := range *config.Metrics.Headers {

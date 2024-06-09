@@ -11,25 +11,6 @@ import (
 	"github.com/pb33f/libopenapi/orderedmap"
 )
 
-type Node struct {
-	Children map[string]*Node
-
-	IsParameter bool
-	CanBeLeaf   bool
-
-	Regex *regexp.Regexp
-
-	Path string
-}
-
-func (n *Node) MatchParam(part string) bool {
-	if !n.IsParameter {
-		return false
-	}
-
-	return n.Regex.MatchString(part)
-}
-
 type Specification struct {
 	Document *libopenapi.DocumentModel[v3.Document]
 	Tree     map[string]*Node
@@ -40,6 +21,26 @@ type Meta struct {
 	Title    string
 	Version  string
 	BasePath string
+}
+
+type Node struct {
+	Children map[string]*Node
+
+	IsParameter bool
+	CanBeLeaf   bool
+
+	Regex *regexp.Regexp
+
+	Path        string
+	OperationID string
+}
+
+func (n *Node) MatchParam(part string) bool {
+	if !n.IsParameter {
+		return false
+	}
+
+	return n.Regex.MatchString(part)
 }
 
 func NewSpecification(ctx context.Context, docModel *libopenapi.DocumentModel[v3.Document]) (*Specification, error) {
@@ -82,7 +83,7 @@ func NewSpecification(ctx context.Context, docModel *libopenapi.DocumentModel[v3
 	return spec, nil
 }
 
-func (s *Specification) MatchPath(method string, p string) (*string, bool) {
+func (s *Specification) MatchPath(method string, p string) (*Node, bool) {
 	// Check if the path starts with the base path
 	if !strings.HasPrefix(p, s.Meta.BasePath) {
 		return nil, false
@@ -109,7 +110,7 @@ type StackNode struct {
 	PartIndex int
 }
 
-func (s *Specification) dfs(currentNode *Node, pathStrParts []string) (*string, bool) {
+func (s *Specification) dfs(currentNode *Node, pathStrParts []string) (*Node, bool) {
 	// Create a stack for the depth-first search with the root node
 	stack := []StackNode{{Node: currentNode, PartIndex: 0}}
 	pathLen := len(pathStrParts)
@@ -131,7 +132,7 @@ func (s *Specification) dfs(currentNode *Node, pathStrParts []string) (*string, 
 		isLastPart := partIndex == pathLen
 		if isLastPart {
 			if currentNode.CanBeLeaf {
-				return &currentNode.Path, true
+				return currentNode, true
 			}
 
 			continue

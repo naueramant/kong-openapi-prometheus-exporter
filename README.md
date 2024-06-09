@@ -22,15 +22,17 @@ Next we need to add a global kong HTTP log plugin to the kong gateway. This plug
 
 ## Configuration
 
-| **Variable**      | **Default Value** | **Description**                                                                  |
-| ----------------- | ----------------- | -------------------------------------------------------------------------------- |
-| `log.level`       | `info`            | The level of logging detail. Common values are `debug`, `info`, `warn`, `error`. |
-| `log.format`      | `json`            | The format of the log output. Common formats are `text` and `json`.              |
-| `prometheus.path` | `/metrics`        | The URL path where metrics are exposed.                                          |
-| `prometheus.port` | `9090`            | The port on which the Prometheus metrics endpoint listens.                       |
-| `openapi.url`     |                   | The URL of the OpenAPI specification.                                            |
-| `openapi.reload`  | `24h`             | The interval at which the OpenAPI documentation is reloaded.                     |
-| `metrics.headers` | `[]`              | List of HTTP headers to be included in the metrics.                              |
+| **Variable**                   | **Default Value** | **Description**                                                                  |
+| ------------------------------ | ----------------- | -------------------------------------------------------------------------------- |
+| `log.level`                    | `info`            | The level of logging detail. Common values are `debug`, `info`, `warn`, `error`. |
+| `log.format`                   | `json`            | The format of the log output. Common formats are `text` and `json`.              |
+| `prometheus.path`              | `/metrics`        | The URL path where metrics are exposed.                                          |
+| `prometheus.port`              | `9090`            | The port on which the Prometheus metrics endpoint listens.                       |
+| `openapi.url`                  |                   | The URL of the OpenAPI specification.                                            |
+| `openapi.file`                 |                   | The path to the OpenAPI specification file.                                      |
+| `openapi.reload`               | `24h`             | The interval at which the OpenAPI documentation is reloaded.                     |
+| `metrics.include_operation_id` | `false`           | Include the operation ID of endpoints in the metrics.                            |
+| `metrics.headers`              | `[]`              | List of HTTP headers to be included in the metrics.                              |
 
 **Warning**:
 

@@ -12,10 +12,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	cfgFile string
-	config  Config = Config{}
-)
+var cfgFile string
 
 type Config struct {
 	Log struct {
@@ -23,15 +20,17 @@ type Config struct {
 		Format string `mapstructure:"format" default:"text" validate:"oneof=text json"`
 	} `mapstructure:"log"`
 	OpenAPI struct {
-		URL    string         `mapstructure:"url" validate:"required,url"`
-		Reload *time.Duration `mapstructure:"reload" validate:"omitempty"`
+		URL    string         `mapstructure:"url" validate:"required_without=File,omitempty,url"`
+		File   string         `mapstructure:"file" validate:"required_without=URL,omitempty,filepath"`
+		Reload *time.Duration `mapstructure:"reload,omitempty"`
 	} `mapstructure:"openapi"`
 	Prometheus struct {
 		Path string `mapstructure:"path" default:"/metrics"`
 		Port string `mapstructure:"port" default:"8080"`
 	}
 	Metrics struct {
-		Headers *[]string `mapstructure:"headers" validate:"omitempty"`
+		IncludeOperationID bool      `mapstructure:"include_operation_id" default:"false"`
+		Headers            *[]string `mapstructure:"headers,omitempty"`
 	}
 }
 
@@ -47,12 +46,12 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "./config.yaml", "config file")
 }
 
-func initConfig() {
+func loadConfig() *Config {
+	var config Config
+
 	viper.SetConfigFile(cfgFile)
 
 	if err := viper.ReadInConfig(); err == nil {
@@ -72,10 +71,12 @@ func initConfig() {
 		logrus.WithError(err).Fatal("Failed to validate config")
 	}
 
-	setupLogger()
+	setupLogger(&config)
+
+	return &config
 }
 
-func setupLogger() {
+func setupLogger(config *Config) {
 	level, err := logrus.ParseLevel(config.Log.Level)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to parse log level")
