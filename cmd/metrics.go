@@ -80,7 +80,7 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 			return
 		}
 
-		ok, specPath := spec.MatchPath(log.Request.Method, log.Request.URI)
+		specPath, ok := spec.MatchPath(log.Request.Method, log.Request.URI)
 		if ok {
 			requestMetric.With(logToLabels(log, *specPath)).Inc()
 		}

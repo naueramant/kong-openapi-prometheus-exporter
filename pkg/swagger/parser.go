@@ -5,17 +5,40 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/pb33f/libopenapi"
 )
 
-func LoadURL(ctx context.Context, url string) (*Specification, error) {
-	openAPISpecBytes, err := fetchFromURL(url)
+func LoadFile(ctx context.Context, path string) (*Specification, error) {
+	specBytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	document, err := libopenapi.NewDocument(openAPISpecBytes)
+	return newSpecification(ctx, specBytes)
+}
+
+func LoadURL(ctx context.Context, url string) (*Specification, error) {
+	httpClient := &http.Client{}
+
+	resp, err := httpClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return newSpecification(ctx, body)
+}
+
+func newSpecification(ctx context.Context, specBytes []byte) (*Specification, error) {
+	document, err := libopenapi.NewDocument(specBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -36,22 +59,4 @@ func LoadURL(ctx context.Context, url string) (*Specification, error) {
 	}
 
 	return spec, nil
-}
-
-func fetchFromURL(url string) ([]byte, error) {
-	httpClient := &http.Client{}
-
-	resp, err := httpClient.Get(url)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
 }

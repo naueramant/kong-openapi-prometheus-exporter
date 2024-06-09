@@ -20,8 +20,6 @@ func getPathParametersForOperationStr(operation string, pathItem *v3.PathItem) [
 		return pathItem.Options.Parameters
 	case "HEAD":
 		return pathItem.Head.Parameters
-	case "TRACE":
-		return pathItem.Trace.Parameters
 	default:
 		return nil
 	}

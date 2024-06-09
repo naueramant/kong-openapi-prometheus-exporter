@@ -2,7 +2,7 @@ package swagger
 
 import v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 
-var operations = []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD", "TRACE"}
+var operations = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"}
 
 func isOperationInPathItem(pathItem *v3.PathItem, method string) bool {
 	switch method {
@@ -20,8 +20,6 @@ func isOperationInPathItem(pathItem *v3.PathItem, method string) bool {
 		return pathItem.Options != nil
 	case "HEAD":
 		return pathItem.Head != nil
-	case "TRACE":
-		return pathItem.Trace != nil
 	default:
 		return false
 	}

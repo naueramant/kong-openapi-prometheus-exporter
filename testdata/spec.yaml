@@ -1,0 +1,162 @@
+---
+openapi: 3.0.0
+info:
+  title: Simple OpenAPI 3.0
+  description: |-
+    This is a sample OpenAPI 3.0 specification
+  version: 1.0.0
+servers:
+  - url: "/api/v1"
+paths:
+  # Simple paths
+  /users:
+    get:
+      summary: Get all users
+      responses:
+        '200': 
+          description: A list of users
+    post:
+      summary: Create a user
+      responses:
+        '200': 
+          description: Created a user
+  # Paths for all the HTTP methods
+  /users/{userId}:
+    get:
+      summary: Get a user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200': 
+          description: A user
+    put:
+      summary: Update a user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200': 
+          description: Updated a user
+    delete:
+      summary: Delete a user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200': 
+          description: Deleted a user
+    options:
+      summary: Get options for a user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200': 
+          description: Options for a user
+    head:
+      summary: Get head for a user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200': 
+          description: Head for a user
+    patch:
+      summary: Patch a user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200': 
+          description: Patched a user
+  # Paths with multiple parameters
+  /users/{userId}/posts/{postId}:
+    get:
+      summary: Get a post by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200': 
+          description: A post
+  # Paths with all the types
+  /users/{userId}/posts/{postId}/comments/{commentId}/sorted/{sorted}:
+    get:
+      summary: Get a comment by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: sorted
+          in: path
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '200': 
+          description: A comment
+  # Path with ubiquitous parameters
+  /users/{pid}/info:
+    get:
+      summary: Get user info
+      parameters:
+        - name: pid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200': 
+          description: A list of comments
+  /users/{email}/history:
+    get:
+      summary: Get all comments by email
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200': 
+          description: A list of comments
+    

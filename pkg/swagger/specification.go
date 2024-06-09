@@ -75,10 +75,10 @@ func NewSpecification(ctx context.Context, docModel *libopenapi.DocumentModel[v3
 	return spec, nil
 }
 
-func (s *Specification) MatchPath(method string, p string) (bool, *string) {
+func (s *Specification) MatchPath(method string, p string) (*string, bool) {
 	// Check if the path starts with the base path
 	if !strings.HasPrefix(p, s.Meta.BasePath) {
-		return false, nil
+		return nil, false
 	}
 
 	// Remove the base path from the path
@@ -90,7 +90,7 @@ func (s *Specification) MatchPath(method string, p string) (bool, *string) {
 	// Start at the root of the tree
 	currentNode := s.Tree[method]
 	if currentNode == nil {
-		return false, nil
+		return nil, false
 	}
 
 	// Traverse the tree
@@ -116,19 +116,19 @@ func (s *Specification) MatchPath(method string, p string) (bool, *string) {
 
 			// If no child is found with a matching parameter, return false
 			if child == nil {
-				return false, nil
+				return nil, false
 			}
 		}
 
 		// If an exact match of the param placeholder, return false
 		// since this doesn't count as a match
 		if ok && child.IsParameter {
-			return false, nil
+			return nil, false
 		}
 
 		// If this is the last part of the path and the child cannot be a leaf, return false
 		if isLast && !child.CanBeLeaf {
-			return false, nil
+			return nil, false
 		}
 
 		currentNode = child
@@ -136,7 +136,7 @@ func (s *Specification) MatchPath(method string, p string) (bool, *string) {
 
 	pathWithBase := path.Join(s.Meta.BasePath, currentNode.Path)
 
-	return true, &pathWithBase
+	return &pathWithBase, true
 }
 
 func (s *Specification) buildPathTreeForMethod(ctx context.Context, docModel *libopenapi.DocumentModel[v3.Document], method string) error {
