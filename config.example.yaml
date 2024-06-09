@@ -7,9 +7,11 @@ prometheus:
   port: 8080
 
 openapi:
-  url: https://docs.wiseflow.net/uniwise.yaml
+  url: https://petstore3.swagger.io/api/v3/openapi.json
+  # file: ./testdata/spec.yaml
   reload: 1h
 
 metrics:
+  include_operation_id: false
   headers:
     - user-agent

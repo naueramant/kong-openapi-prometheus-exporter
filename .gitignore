@@ -3,5 +3,6 @@
 
 main
 
+config.yaml
 graph/*.png
 *.json
