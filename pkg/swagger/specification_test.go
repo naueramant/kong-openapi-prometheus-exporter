@@ -48,6 +48,9 @@ func TestSpecification_MatchPath(t *testing.T) {
 
 		// weird paths
 		{"GET", "/api/v1/weird/foo/bar/buzz", true},
+
+		// path with parameters on the path object
+		{"GET", "/api/v1/path-params/foo", true},
 	}
 
 	for _, test := range tests {

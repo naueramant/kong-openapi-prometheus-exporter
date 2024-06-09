@@ -20,6 +20,7 @@ paths:
       responses:
         '200': 
           description: Created a user
+          
   # Paths for all the HTTP methods
   /users/{userId}:
     get:
@@ -88,6 +89,7 @@ paths:
       responses:
         '200': 
           description: Patched a user
+
   # Paths with multiple parameters
   /users/{userId}/posts/{postId}:
     get:
@@ -106,6 +108,7 @@ paths:
       responses:
         '200': 
           description: A post
+
   # Paths with all the types
   /users/{userId}/posts/{postId}/comments/{commentId}/sorted/{sorted}:
     get:
@@ -134,6 +137,7 @@ paths:
       responses:
         '200': 
           description: A comment
+
   # Path with ubiquitous parameters
   /workers/{pid}/info:
     get:
@@ -159,6 +163,7 @@ paths:
       responses:
         '200': 
           description: A list of comments
+
   # Weird paths
   /weird/{p1}/{p2}/{p3}:
     get:
@@ -182,3 +187,17 @@ paths:
       responses:
         '200': 
           description: Some weird stuff
+  
+  # Path with parameters on the path object instead of the operation object
+  /path-params/{param}:
+    parameters:
+      - name: param
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get path param
+      responses:
+        '200': 
+          description: A path param
