@@ -17,7 +17,7 @@ var cfgFile string
 type Config struct {
 	Log struct {
 		Level  string `mapstructure:"level" default:"info" validate:"oneof=panic fatal error warn info debug trace"`
-		Format string `mapstructure:"format" default:"text" validate:"oneof=text json"`
+		Format string `mapstructure:"format" default:"json" validate:"oneof=text json"`
 	} `mapstructure:"log"`
 	OpenAPI struct {
 		URL    string         `mapstructure:"url" validate:"required_without=File,omitempty,url"`

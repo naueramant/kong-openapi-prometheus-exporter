@@ -9,7 +9,7 @@ prometheus:
 openapi:
   url: https://petstore3.swagger.io/api/v3/openapi.json
   # file: ./testdata/spec.yaml
-  reload: 1h
+  reload: 6h
 
 metrics:
   include_operation_id: false

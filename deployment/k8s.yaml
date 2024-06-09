@@ -1,0 +1,80 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: kong-openapir-prometheus-exporter
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong-openapi-prometheus-exporter
+  namespace: kong-openapir-prometheus-exporter
+  labels:
+    app: kong-openapi-prometheus-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kong-openapi-prometheus-exporter
+  template:
+    metadata:
+      labels:
+        app: kong-openapi-prometheus-exporter
+    spec:
+      containers:
+        - name: kong-openapi-prometheus-exporter
+          image: naueramant/kong-openapi-prometheus-exporter:1.0.0
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logs
+  namespace: kong-openapir-prometheus-exporter
+spec:
+  selector:
+    app: kong-openapi-prometheus-exporter
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: kong-openapir-prometheus-exporter
+data:
+  config.yaml: |
+    log:
+      level: info
+      format: json
+
+    prometheus:
+      path: /metrics
+      port: 8080
+
+    openapi:
+      url: "CHANGE ME"
+      reload: 6h
+
+    metrics:
+      include_operation_id: false
+      headers: []

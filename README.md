@@ -6,18 +6,31 @@ This prometheus takes a swagger file and uses the kong request log to generate p
 
 ### 1. Deploy the exporter
 
-First of all we need to deploy the exporter. This can be done with the provided helm chart.
-
-```bash
-
-```
+-   Download the kubernetes manifest from [deployment/k8s.yaml](deployment/k8s.yaml).
+-   Change the `openapi.url` and other configuration values as needed in the ConfigMap.
+    -   Alternatively, you can mount the OpenAPI 3.0 specification file to container using a volume and set the `openapi.file` configuration.
+-   Deploy the exporter to your kubernetes cluster.
 
 ### 2. Add global kong HTTP log plugin
 
-Next we need to add a global kong HTTP log plugin to the kong gateway. This plugin will log all requests to the exporter.
+Next you need to add a global kong HTTP log plugin to the kong gateway. This plugin will log all requests to the exporter.
 
-```bash
-
+```yaml
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+    name: kong-openapi-prometheus-exporter-http-log
+    annotations:
+        kubernetes.io/ingress.class: kong
+    labels:
+        global: "true"
+config:
+    http_endpoint: http://logs.kong-openapi-prometheus-exporter.svc.cluster.local:8080
+    method: POST
+    timeout: 1000
+    keepalive: 1000
+    retry_count: 1
+plugin: http-log
 ```
 
 ## Configuration
@@ -30,7 +43,7 @@ Next we need to add a global kong HTTP log plugin to the kong gateway. This plug
 | `prometheus.port`              | `9090`            | The port on which the Prometheus metrics endpoint listens.                       |
 | `openapi.url`                  |                   | The URL of the OpenAPI 3.0 specification.                                        |
 | `openapi.file`                 |                   | The path to the OpenAPI 3.0 specification file.                                  |
-| `openapi.reload`               | `24h`             | The interval at which the OpenAPI 3.0 documentation is reloaded.                 |
+| `openapi.reload`               | `6h`              | The interval at which the OpenAPI 3.0 documentation is reloaded.                 |
 | `metrics.include_operation_id` | `false`           | Include the operation ID of endpoints in the metrics.                            |
 | `metrics.headers`              | `[]`              | List of HTTP headers to be included in the metrics.                              |
 
