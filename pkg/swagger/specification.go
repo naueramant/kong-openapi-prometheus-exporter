@@ -91,6 +91,11 @@ func (s *Specification) MatchPath(method string, p string) (*Node, bool) {
 	// Remove the base path from the path
 	p = strings.TrimPrefix(p, s.Meta.BasePath)
 
+	// Remove query parameters from the path
+	if strings.Contains(p, "?") {
+		p = strings.Split(p, "?")[0]
+	}
+
 	// Split the path into parts
 	pathStrParts := splitPath(p)
 
