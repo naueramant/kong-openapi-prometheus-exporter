@@ -7,7 +7,7 @@ metadata:
     labels:
         global: "true"
 config:
-    http_endpoint: http://logs.kong-openapi-prometheus-exporter.svc.cluster.local:8080/logs
+    http_endpoint: http://logs.kong-openapi-prometheus-exporter.svc.cluster.local:9090/logs
     method: POST
     timeout: 1000
     keepalive: 1000

@@ -26,7 +26,7 @@ type Config struct {
 	} `mapstructure:"openapi"`
 	Prometheus struct {
 		Path string `mapstructure:"path" default:"/metrics"`
-		Port string `mapstructure:"port" default:"8080"`
+		Port int    `mapstructure:"port" default:"9090"`
 	}
 	Metrics struct {
 		Headers *[]string `mapstructure:"headers,omitempty"`

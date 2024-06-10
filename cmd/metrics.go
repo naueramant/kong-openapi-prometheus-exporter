@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -106,7 +107,10 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 		"path": config.Prometheus.Path,
 	}).Info("Starting prometheus server")
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(
+		fmt.Sprintf(":%d", config.Prometheus.Port),
+		nil,
+	); err != nil {
 		logrus.WithError(err).Fatal("Failed to start prometheus server")
 	}
 }

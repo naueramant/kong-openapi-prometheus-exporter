@@ -21,7 +21,7 @@ spec:
         app: kong-openapi-prometheus-exporter
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
+        prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
     spec:
       containers:
@@ -36,7 +36,7 @@ spec:
               cpu: "100m"
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 9090
           volumeMounts:
             - name: config
               mountPath: /config.yaml
@@ -57,8 +57,8 @@ spec:
   ports:
     - name: http
       protocol: TCP
-      port: 8080
-      targetPort: 8080
+      port: 9090
+      targetPort: 9090
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -73,7 +73,7 @@ data:
 
     prometheus:
       path: /metrics
-      port: 8080
+      port: 9090
 
     openapi:
       url: "CHANGE ME"
