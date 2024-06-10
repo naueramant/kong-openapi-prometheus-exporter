@@ -1,0 +1,15 @@
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+    name: kong-openapi-prometheus-exporter-http-log
+    annotations:
+        kubernetes.io/ingress.class: kong
+    labels:
+        global: "true"
+config:
+    http_endpoint: http://logs.kong-openapi-prometheus-exporter.svc.cluster.local:8080/logs
+    method: POST
+    timeout: 1000
+    keepalive: 1000
+    retry_count: 1
+plugin: http-log

@@ -48,7 +48,6 @@ plugin: http-log
 | `openapi.url`                  |                   | The URL of the OpenAPI 3.0 specification.                                        |
 | `openapi.file`                 |                   | The path to the OpenAPI 3.0 specification file.                                  |
 | `openapi.reload`               | `6h`              | The interval at which the OpenAPI 3.0 documentation is reloaded.                 |
-| `metrics.include_operation_id` | `false`           | Include the operation ID of endpoints in the metrics.                            |
 | `metrics.headers`              | `[]`              | List of HTTP headers to be included in the metrics.                              |
 
 **Warning**:

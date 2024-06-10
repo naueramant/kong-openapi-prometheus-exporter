@@ -11,7 +11,6 @@ openapi:
   # file: ./testdata/spec.yaml
   reload: 6h
 
-metrics:
-  include_operation_id: false
-  headers:
-    - user-agent
+# metrics:
+#   headers:
+#     - user-agent
