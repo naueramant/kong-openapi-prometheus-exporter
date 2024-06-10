@@ -54,7 +54,7 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 
 	promInstance := prometheus.NewRegistry()
 
-	metricLabels := []string{"method", "status", "duration", "path"}
+	metricLabels := []string{"host", "method", "status", "duration", "path"}
 
 	if config.Metrics.IncludeOperationID {
 		metricLabels = append(metricLabels, "operation_id")
@@ -157,6 +157,7 @@ func startReloadSpecificationJob(ctx context.Context) {
 
 func logToLabels(log *kong.Log, pathNode *swagger.Node) prometheus.Labels {
 	labels := prometheus.Labels{
+		"host":     log.Service.Host,
 		"method":   log.Request.Method,
 		"status":   strconv.Itoa(log.Response.Status),
 		"duration": strconv.Itoa(log.Latencies.Request),
