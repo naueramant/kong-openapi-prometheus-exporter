@@ -31,8 +31,7 @@ type Node struct {
 
 	Regex *regexp.Regexp
 
-	Path        string
-	OperationID string
+	Path string
 }
 
 func (n *Node) MatchParam(part string) bool {

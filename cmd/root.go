@@ -29,8 +29,7 @@ type Config struct {
 		Port string `mapstructure:"port" default:"8080"`
 	}
 	Metrics struct {
-		IncludeOperationID bool      `mapstructure:"include_operation_id" default:"false"`
-		Headers            *[]string `mapstructure:"headers,omitempty"`
+		Headers *[]string `mapstructure:"headers,omitempty"`
 	}
 }
 

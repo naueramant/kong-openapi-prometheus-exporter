@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -27,14 +26,20 @@ func init() {
 	rootCmd.AddCommand(metricsCmd)
 }
 
-var spec *swagger.Specification
+var (
+	spec   *swagger.Specification
+	config *Config
 
-var config *Config
+	prom            *prometheus.Registry
+	httpReqsTotal   *prometheus.CounterVec
+	httpReqDuration *prometheus.HistogramVec
+)
 
 func RunMetrics(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
-
 	config = loadConfig()
+
+	// Load OpenAPI specification
 
 	logrus.WithFields(logrus.Fields{
 		"url": config.OpenAPI.URL,
@@ -44,6 +49,8 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 		logrus.WithError(err).Fatal("Failed to load OpenAPI specification")
 	}
 
+	// Start auto reload job
+
 	if config.OpenAPI.Reload != nil {
 		logrus.WithFields(logrus.Fields{
 			"interval": *config.OpenAPI.Reload,
@@ -52,43 +59,33 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 		go startReloadSpecificationJob(ctx)
 	}
 
-	promInstance := prometheus.NewRegistry()
+	// Initialize prometheus metrics
 
-	metricLabels := []string{"host", "method", "status", "duration", "path"}
+	initMetrics()
 
-	if config.Metrics.IncludeOperationID {
-		metricLabels = append(metricLabels, "operation_id")
-	}
+	// Register HTTP handlers
 
-	headerLabels := []string{}
-	for _, header := range *config.Metrics.Headers {
-		headerLabels = append(headerLabels, headerNameToLabelName(header))
-	}
-	metricLabels = append(metricLabels, headerLabels...)
-
-	requestMetric := prometheus.NewCounterVec(prometheus.CounterOpts{
-		Subsystem: "kong_openapi_exporter",
-		Name:      "http_requests_total",
-		Help:      "Total number of requests to the API",
-	}, metricLabels)
-
-	promInstance.MustRegister(requestMetric)
-
-	http.Handle("/metrics", promhttp.HandlerFor(promInstance, promhttp.HandlerOpts{
-		Registry: promInstance,
+	http.Handle("/metrics", promhttp.HandlerFor(prom, promhttp.HandlerOpts{
+		Registry: prom,
 	}))
 
-	http.Handle("/log", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	http.Handle("/logs", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logrus.Debug("Received log")
+
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)
+
+			return
 		}
 
 		log, err := kong.ParseLog(
 			r.Body,
 		)
-		if err != nil {
-			fmt.Println(err)
 
+		logrus.WithField("log", *log).Trace("raw log")
+
+		if err != nil {
+			logrus.WithError(err).Debug("Failed to parse log")
 			w.WriteHeader(http.StatusBadRequest)
 
 			return
@@ -96,11 +93,13 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 
 		pathNode, ok := spec.MatchPath(log.Request.Method, log.Request.URI)
 		if ok {
-			requestMetric.With(logToLabels(log, pathNode)).Inc()
+			recordMetrics(log, pathNode)
 		}
 
 		w.WriteHeader(http.StatusOK)
 	}))
+
+	// Start http server
 
 	logrus.WithFields(logrus.Fields{
 		"port": config.Prometheus.Port,
@@ -155,24 +154,91 @@ func startReloadSpecificationJob(ctx context.Context) {
 	}()
 }
 
-func logToLabels(log *kong.Log, pathNode *swagger.Node) prometheus.Labels {
-	labels := prometheus.Labels{
-		"host":     log.Service.Host,
-		"method":   log.Request.Method,
-		"status":   strconv.Itoa(log.Response.Status),
-		"duration": strconv.Itoa(log.Latencies.Request),
-		"path":     pathNode.Path,
+func initMetrics() {
+	// Register prometheus metrics
+
+	promInstance := prometheus.NewRegistry()
+
+	headerLabels := []string{}
+	if config.Metrics.Headers != nil {
+		for _, header := range *config.Metrics.Headers {
+			headerLabels = append(headerLabels, headerNameToLabelName(header))
+		}
 	}
 
-	if config.Metrics.IncludeOperationID {
-		labels["operation_id"] = pathNode.OperationID
+	// http_requests_total metric
+
+	httpRequestsTotalLabels := []string{"host", "method", "status", "path"}
+	httpRequestsTotalLabels = append(httpRequestsTotalLabels, headerLabels...)
+
+	requestMetric := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: "kong_openapi_exporter",
+		Name:      "http_requests_total",
+		Help:      "Total number of HTTP requests",
+	}, httpRequestsTotalLabels)
+
+	promInstance.MustRegister(requestMetric)
+
+	// http_request_duration_miliseconds
+
+	httpRequestDurationLabels := []string{"host", "method", "path"}
+	httpRequestDurationLabels = append(httpRequestDurationLabels, headerLabels...)
+
+	latencyMetric := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Subsystem: "kong_openapi_exporter",
+		Name:      "http_request_duration_miliseconds",
+		Help:      "HTTP request duration in milliseconds",
+		Buckets:   []float64{25, 50, 80, 100, 250, 400, 700, 1000, 2000, 5000, 10000, 30000, 60000},
+	}, httpRequestDurationLabels)
+
+	promInstance.MustRegister(latencyMetric)
+
+	// Assign metrics to global variables
+
+	prom = promInstance
+	httpReqsTotal = requestMetric
+	httpReqDuration = latencyMetric
+}
+
+func recordMetrics(log *kong.Log, pathNode *swagger.Node) {
+	// Match the path
+
+	pathNode, ok := spec.MatchPath(log.Request.Method, log.Request.URI)
+	if !ok {
+		return
 	}
 
-	for _, header := range *config.Metrics.Headers {
-		labels[headerNameToLabelName(header)] = log.Request.Headers[header]
+	// http_requests_total labels
+
+	httpReqsTotalLabels := prometheus.Labels{
+		"host":   log.Request.Headers["host"],
+		"method": log.Request.Method,
+		"status": strconv.Itoa(log.Response.Status),
+		"path":   pathNode.Path,
+	}
+	if config.Metrics.Headers != nil {
+		for _, header := range *config.Metrics.Headers {
+			httpReqsTotalLabels[headerNameToLabelName(header)] = log.Request.Headers[header]
+		}
 	}
 
-	return labels
+	// http_request_duration_miliseconds labels
+
+	httpReqDurationLabels := prometheus.Labels{
+		"host":   log.Request.Headers["host"],
+		"method": log.Request.Method,
+		"path":   pathNode.Path,
+	}
+	if config.Metrics.Headers != nil {
+		for _, header := range *config.Metrics.Headers {
+			httpReqDurationLabels[headerNameToLabelName(header)] = log.Request.Headers[header]
+		}
+	}
+
+	// Increment counters and observe histograms
+
+	httpReqsTotal.With(httpReqsTotalLabels).Inc()
+	httpReqDuration.With(httpReqDurationLabels).Observe(float64(log.Latencies.Request))
 }
 
 func headerNameToLabelName(header string) string {

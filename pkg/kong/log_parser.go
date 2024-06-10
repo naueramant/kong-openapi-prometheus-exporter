@@ -7,14 +7,9 @@ import (
 )
 
 type Log struct {
-	Service   Service   `json:"service"`
 	Request   Request   `json:"request"`
 	Response  Response  `json:"response"`
 	Latencies Latencies `json:"latencies"`
-}
-
-type Service struct {
-	Host string `json:"host"`
 }
 
 type Latencies struct {
