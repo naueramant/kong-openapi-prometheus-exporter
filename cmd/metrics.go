@@ -82,15 +82,14 @@ func RunMetrics(cmd *cobra.Command, args []string) {
 		log, err := kong.ParseLog(
 			r.Body,
 		)
-
-		logrus.WithField("log", *log).Trace("raw log")
-
 		if err != nil {
 			logrus.WithError(err).Debug("Failed to parse log")
 			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
+
+		logrus.WithField("log", *log).Trace("raw log")
 
 		pathNode, ok := spec.MatchPath(log.Request.Method, log.Request.URI)
 		if ok {
