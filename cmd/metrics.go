@@ -182,14 +182,14 @@ func initMetrics() {
 
 	promInstance.MustRegister(requestMetric)
 
-	// http_request_duration_miliseconds
+	// http_request_duration_milliseconds
 
-	httpRequestDurationLabels := []string{"host", "method", "path"}
+	httpRequestDurationLabels := []string{"host", "method", "status", "path"}
 	httpRequestDurationLabels = append(httpRequestDurationLabels, headerLabels...)
 
 	latencyMetric := prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Subsystem: "kong_openapi_exporter",
-		Name:      "http_request_duration_miliseconds",
+		Name:      "http_request_duration_milliseconds",
 		Help:      "HTTP request duration in milliseconds",
 		Buckets:   []float64{25, 50, 80, 100, 250, 400, 700, 1000, 2000, 5000, 10000, 30000, 60000},
 	}, httpRequestDurationLabels)
@@ -211,30 +211,35 @@ func recordMetrics(log *kong.Log, pathNode *swagger.Node) {
 		return
 	}
 
+	statusCodeStr := strconv.Itoa(log.Response.Status)
+
 	// http_requests_total labels
 
 	httpReqsTotalLabels := prometheus.Labels{
 		"host":   log.Request.Headers["host"],
 		"method": log.Request.Method,
-		"status": strconv.Itoa(log.Response.Status),
+		"status": statusCodeStr,
 		"path":   pathNode.Path,
 	}
-	if config.Metrics.Headers != nil {
-		for _, header := range *config.Metrics.Headers {
-			httpReqsTotalLabels[headerNameToLabelName(header)] = log.Request.Headers[header]
-		}
-	}
 
-	// http_request_duration_miliseconds labels
+	// http_request_duration_milliseconds labels
 
 	httpReqDurationLabels := prometheus.Labels{
 		"host":   log.Request.Headers["host"],
 		"method": log.Request.Method,
+		"status": statusCodeStr,
 		"path":   pathNode.Path,
 	}
+
+	// Add headers to labels
+
 	if config.Metrics.Headers != nil {
 		for _, header := range *config.Metrics.Headers {
-			httpReqDurationLabels[headerNameToLabelName(header)] = log.Request.Headers[header]
+			headerLabel := headerNameToLabelName(header)
+			headerValue := log.Request.Headers[header]
+
+			httpReqsTotalLabels[headerLabel] = headerValue
+			httpReqDurationLabels[headerLabel] = headerValue
 		}
 	}
 

@@ -53,6 +53,17 @@ _Also found in [deployment/kong-plugin.yaml](deployment/kong-plugin.yaml)_
 
 **Warning**:
 
-Including headers in the metrics can lead to a high cardinality of metrics, which can lead to performance issues in Prometheus. Use this feature with caution.
+Including headers in the metrics can lead to a high cardinality of metrics, which can lead to performance issues in Prometheus. Use this feature with caution. The cardinality of the metrics can be calculated by:
+
+```
+cardinality = (unique values of custom header) * (hosts) * (status_codes) * (methods) * (paths)
+```
+
+Example:
+One host with 1 custom header which can have 200 unique values, 5 status codes, 5 methods, and 10 paths will have a cardinality of:
+
+```
+cardinality = 200 * 1 * 5 * 5 * 10 = 50000
+```
 
 Don't include sensitive information in the headers, as they will be exposed in the metrics.
