@@ -6,6 +6,7 @@ require (
 	github.com/creasty/defaults v1.7.0
 	github.com/go-playground/validator/v10 v10.21.0
 	github.com/goccy/go-graphviz v0.1.3
+	github.com/goccy/go-reflect v1.2.0
 	github.com/google/uuid v1.6.0
 	github.com/json-iterator/go v1.1.12
 	github.com/pb33f/libopenapi v0.16.8
@@ -14,6 +15,8 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.19.0
 	github.com/tj/assert v0.0.3
+	github.com/valyala/fastjson v1.6.4
+	go.uber.org/zap v1.21.0
 )
 
 require (
