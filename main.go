@@ -21,6 +21,7 @@ func main() {
 		},
 		Response: kong.Response{
 			Status: 200,
+			Size:   200,
 		},
 		Latencies: kong.Latencies{
 			Request: 100,
@@ -30,11 +31,11 @@ func main() {
 
 	lgr, err := logger.New([]logger.Field{
 		{
-			Name:     "request_path",
+			Name:     "path",
 			Property: "Request.URI",
 		},
 		{
-			Name:     "request_duration",
+			Name:     "duration",
 			Property: "Latencies.Request",
 		},
 		{
@@ -59,12 +60,20 @@ func main() {
 			Property: `Request.Size`,
 		},
 		{
+			Name:     "response_size",
+			Property: `Response.Size`,
+		},
+		{
 			Name:     "client_ip",
 			Property: `ClientIP`,
 		},
 		{
-			Name:     "response_user_agent",
+			Name:     "user_agent",
 			Property: `Request.Headers["User-Agent"]`,
+		},
+		{
+			Name:     "status_code",
+			Property: `Response.Status`,
 		},
 	})
 	if err != nil {
