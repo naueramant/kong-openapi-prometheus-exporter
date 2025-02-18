@@ -51,6 +51,9 @@ func (logger *Logger) Log(log kong.Log) {
 
 	for _, field := range logger.fields {
 		value := log.Get(field.Property)
+		if value == nil {
+			continue
+		}
 
 		if field.Transformer == "jwt" {
 			key, _ := field.With["key"]
@@ -65,12 +68,14 @@ func (logger *Logger) Log(log kong.Log) {
 			value = URLTransformer(value.(string), key)
 		}
 
-		if value == nil {
+		if value == nil || value == "" {
 			continue
 		}
 
 		zapFields = append(zapFields, zap.Any(field.Name, value))
 	}
+
+	zapFields = removeDuplicates(zapFields)
 
 	logger.zap.Info("", zapFields...)
 }
@@ -130,4 +135,22 @@ func contains(arr []string, val string) bool {
 	}
 
 	return false
+}
+
+// Remove duplicate fields from the slice
+// The last field with the same key will be kept
+func removeDuplicates(fields []zap.Field) []zap.Field {
+	seen := make(map[string]struct{})
+	result := make([]zap.Field, 0)
+
+	for i := len(fields) - 1; i >= 0; i-- {
+		field := fields[i]
+
+		if _, ok := seen[field.Key]; !ok {
+			seen[field.Key] = struct{}{}
+			result = append([]zap.Field{field}, result...)
+		}
+	}
+
+	return result
 }

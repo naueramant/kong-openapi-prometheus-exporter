@@ -48,6 +48,9 @@ func JWTTransformer(val string, key string, typ string) any {
 	}
 
 	strVal := string(v.GetStringBytes(key))
+	if strVal == "" {
+		return nil
+	}
 
 	var castedType any
 	switch typ {
