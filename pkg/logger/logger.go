@@ -2,6 +2,7 @@ package logger
 
 import (
 	"api-usage/pkg/kong"
+	"api-usage/pkg/logger/transformers"
 	"errors"
 
 	"go.uber.org/zap"
@@ -16,8 +17,9 @@ type Field struct {
 }
 
 type Logger struct {
-	zap    *zap.Logger
-	fields []Field
+	zap          *zap.Logger
+	fields       []Field
+	transformers map[string]transformers.Transformer
 }
 
 func New(fields []Field) (*Logger, error) {
@@ -34,15 +36,21 @@ func New(fields []Field) (*Logger, error) {
 		return nil, err
 	}
 
+	transformers := map[string]transformers.Transformer{
+		"jwt": transformers.NewJWT(),
+		"url": transformers.NewURL(),
+	}
+
 	for _, field := range fields {
-		if err := validateFieldConfig(field); err != nil {
+		if err := validateFieldConfig(field, transformers); err != nil {
 			return nil, err
 		}
 	}
 
 	return &Logger{
-		zap:    zap,
-		fields: fields,
+		zap:          zap,
+		fields:       fields,
+		transformers: transformers,
 	}, nil
 }
 
@@ -55,17 +63,9 @@ func (logger *Logger) Log(log kong.Log) {
 			continue
 		}
 
-		if field.Transformer == "jwt" {
-			key, _ := field.With["key"]
-			typ, _ := field.With["type"]
-
-			value = JWTTransformer(value.(string), key, typ)
-		}
-
-		if field.Transformer == "url" {
-			key, _ := field.With["key"]
-
-			value = URLTransformer(value.(string), key)
+		if transformer := field.Transformer; transformer != "" {
+			transformer := logger.transformers[transformer]
+			value = transformer.Transform(value, field.With)
 		}
 
 		if value == nil || value == "" {
@@ -75,20 +75,18 @@ func (logger *Logger) Log(log kong.Log) {
 		zapFields = append(zapFields, zap.Any(field.Name, value))
 	}
 
-	zapFields = removeDuplicates(zapFields)
+	zapFields = removeDuplicatedFields(zapFields)
 
 	logger.zap.Info("", zapFields...)
 }
 
-var ErrInvalidFieldName = errors.New("invalid field name")
-var ErrInvalidFieldProperty = errors.New("invalid field property")
-var ErrInvalidFieldTransformer = errors.New("invalid field transformer")
-var ErrMissingWithKey = errors.New("missing key in With field")
+var (
+	ErrInvalidFieldName     = errors.New("invalid field name")
+	ErrInvalidFieldProperty = errors.New("invalid field property")
+	ErrInvalidTransformer   = errors.New("invalid transformer")
+)
 
-var allowedTransformers = []string{"", "jwt", "url"}
-var allowedURLKeys = []string{"scheme", "host", "path", "query", "fragment"}
-
-func validateFieldConfig(field Field) error {
+func validateFieldConfig(field Field, transformers map[string]transformers.Transformer) error {
 	// Name should not be empty
 	if field.Name == "" {
 		return ErrInvalidFieldName
@@ -99,47 +97,22 @@ func validateFieldConfig(field Field) error {
 		return ErrInvalidFieldProperty
 	}
 
-	// Transformer should be one of the allowed transformers
-	if !contains(allowedTransformers, field.Transformer) {
-		return ErrInvalidFieldTransformer
-	}
-
-	// If transformer is jwt, there should be no "With" field containing a non-empty value "key"
-	if transformer := field.Transformer; transformer == "jwt" {
-		if field.With != nil {
-			if key, ok := field.With["key"]; !ok || key == "" {
-				return ErrMissingWithKey
-			}
+	// Transformer should be valid
+	if field.Transformer != "" {
+		if _, ok := transformers[field.Transformer]; !ok {
+			return ErrInvalidTransformer
 		}
-	}
 
-	// If transformer is url, there should be no "With" field containing a non-empty value "key" with a allowed value
-	if transformer := field.Transformer; transformer == "url" {
-		if field.With != nil {
-			if key, ok := field.With["key"]; ok && key != "" {
-				if !contains(allowedURLKeys, key) {
-					return ErrMissingWithKey
-				}
-			}
+		if err := transformers[field.Transformer].ValidateWith(field.With); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func contains(arr []string, val string) bool {
-	for _, v := range arr {
-		if v == val {
-			return true
-		}
-	}
-
-	return false
-}
-
-// Remove duplicate fields from the slice
 // The last field with the same key will be kept
-func removeDuplicates(fields []zap.Field) []zap.Field {
+func removeDuplicatedFields(fields []zap.Field) []zap.Field {
 	seen := make(map[string]struct{})
 	result := make([]zap.Field, 0)
 

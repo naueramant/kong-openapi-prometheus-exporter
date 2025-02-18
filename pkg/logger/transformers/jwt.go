@@ -1,14 +1,53 @@
-package logger
+package transformers
 
 import (
 	"encoding/base64"
+	"errors"
 	"strconv"
 	"strings"
 
 	"github.com/valyala/fastjson"
 )
 
-func JWTTransformer(val string, key string, typ string) any {
+var (
+	ErrJWTKeyNotProvided  = errors.New("key not provided in JWT transformer")
+	ErrJWTTypeNotProvided = errors.New("type not provided in JWT transformer")
+)
+
+type JWTTransformer struct{}
+
+func NewJWT() *JWTTransformer {
+	return &JWTTransformer{}
+}
+
+func (t *JWTTransformer) ValidateWith(with map[string]string) error {
+	if _, ok := with["key"]; !ok {
+		return ErrJWTKeyNotProvided
+	}
+
+	if _, ok := with["type"]; !ok {
+		return ErrJWTTypeNotProvided
+	}
+
+	return nil
+}
+
+func (t *JWTTransformer) Transform(value any, with map[string]string) any {
+	val, ok := value.(string)
+	if !ok {
+		return ""
+	}
+
+	key, ok := with["key"]
+	if !ok {
+		return ""
+	}
+
+	typ, ok := with["type"]
+	if !ok {
+		typ = "string"
+	}
+
 	if len(val) > 7 && val[:7] == "Bearer " {
 		val = val[7:]
 	}
@@ -61,7 +100,7 @@ func JWTTransformer(val string, key string, typ string) any {
 	case "bool":
 		castedType = convertStringToBool(strVal)
 	default:
-		castedType = strVal
+		castedType = strVal // default to string, should not happen
 	}
 
 	return castedType
