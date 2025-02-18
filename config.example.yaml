@@ -2,15 +2,42 @@ log:
   level: debug
   format: text
 
-prometheus:
-  path: /metrics
-  port: 8080
 
-openapi:
-  url: https://petstore3.swagger.io/api/v3/openapi.json
-  # file: ./testdata/spec.yaml
-  reload: 6h
+metrics:
+  prometheus:
+    path: /metrics
+    port: 8080
 
-# metrics:
-#   headers:
-#     - user-agent
+  openapi:
+    url: https://petstore3.swagger.io/api/v3/openapi.json
+    # file: ./testdata/spec.yaml
+    reload: 6h
+
+  # headers:
+  #   - user-agent
+
+logger:
+  fields:
+    - name: method
+      property: Request.Method
+    - name: host
+      property: Request.Header["host"]
+    - name: path
+      property: Request.URI
+    - name: status_code
+      property: Response.Status
+    - name: duration
+      property: Response.Duration
+    - name: size
+      property: Response.Size
+    - name: client_ip
+      property: ClientIp
+    - name: user_agent
+      property: Request.Header["user-agent"]
+    - name: request_id
+      property: Request.Header["x-request-id"]
+    - name: user_id
+      property: Request.Header["authorization"]
+      transformer: jwt
+      with:
+        key: "sub"    
